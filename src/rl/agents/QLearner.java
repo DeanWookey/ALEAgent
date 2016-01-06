@@ -44,7 +44,7 @@ public class QLearner extends RLAgent{
     public int agent_step(double reward, State s) {
         int action = getAction(s);
         addSample(lastState,lastAction,reward,s,action);
-        lastState = s;
+        lastState.replace(s); //will throw null exception if agent_start not called at least once before agent_step
         lastAction = action;
         return action;
     }
@@ -98,22 +98,27 @@ public class QLearner extends RLAgent{
         //System.err.println("LastQ:"+FA[move].getValue(currState));
         nextMove = greedyMove(newState);
         
+        double[] phi_t = FA[move].computeFeatures(currState);
+        double[] phi_tp = null;
+        if ((!newState.isTerminal()) && (nextMove != -1)) {
+            phi_tp = FA[nextMove].computeFeatures(newState);
+        }
+        
         // Alpha scaling
         // Formula?
         // ea = SUM(gamma*f(i)*(dQ/dw) - f(i)*(dQ/dw))  ??
         // Where Q = SUM(w(i)*f(i))
+        double[] shrink = FA[move].getShrink();
         double epsilon_alpha = 0.0;
         if ((!newState.isTerminal()) && (nextMove != -1)) {
-            double[] phi_tp = FA[nextMove].computeFeatures(newState);
-            double[] phi_t = FA[move].computeFeatures(currState);
+            double[] nextShrink = FA[nextMove].getShrink();
             for (int k = 0; k < FA[move].getNumFunctions(); k++) {
-                epsilon_alpha += gamma * phi_tp[k] * phi_tp[k] - phi_t[k] * phi_t[k];
+                epsilon_alpha += gamma * phi_tp[k] * phi_tp[k] / nextShrink[k] - phi_t[k] * phi_t[k] / shrink[k];
             }
         } else {
             // terminal state - calculate only from last move
-            double[] phi_t = FA[move].computeFeatures(currState);
             for (int k = 0; k < FA[move].getNumFunctions(); k++) {
-                epsilon_alpha += -1.0 * phi_t[k] * phi_t[k];
+                epsilon_alpha += -1.0 * phi_t[k] * phi_t[k] / shrink[k];
             }
         }
         // epsilon_alpha < 0, we have good bounds 
@@ -123,10 +128,12 @@ public class QLearner extends RLAgent{
         
         
         // calculate temporal difference error
-        double delta = reward - FA[move].getValue(currState);
+        //double delta = reward - FA[move].getValue(currState);
+        double delta = reward - FA[move].getValue(phi_t);
         // not end of episode -> update delta with next estimated value
         if ((!newState.isTerminal()) && (nextMove != -1)) {
-            delta += gamma * FA[nextMove].getValue(newState);
+            //delta += gamma * FA[nextMove].getValue(newState);
+            delta += gamma * FA[nextMove].getValue(phi_tp);
         }
 
         // Check for divergence
@@ -139,12 +146,10 @@ public class QLearner extends RLAgent{
         // Update weights
         if ((!newState.isTerminal()) && (nextMove != -1)) {
             // Should only the concerned basis functions be updated?
-            double[] phi = FA[move].computeFeatures(currState);
-            double[] phi2 = FA[nextMove].computeFeatures(newState);
 
             double[] deltaW = new double[FA[move].getNumFunctions()];
             for (int i = 0; i < FA[move].getNumFunctions(); i++) {
-                deltaW[i] = alpha * delta * (phi[i] - gamma*phi2[i]);
+                deltaW[i] = (alpha/shrink[i]) * delta * (phi_t[i] - gamma*phi_tp[i]);
             }
             /*double[] deltaW2 = new double[FA[nextMove].getNumFunctions()];
             for (int i = 0; i < FA[nextMove].getNumFunctions(); i++) {
@@ -157,10 +162,9 @@ public class QLearner extends RLAgent{
         } 
         else {
             // Terminal state
-            double[] phi = FA[move].computeFeatures(currState);
             double[] deltaW = new double[FA[move].getNumFunctions()];
             for (int i = 0; i < FA[move].getNumFunctions(); i++) {
-                deltaW[i] = alpha * delta * phi[i];
+                deltaW[i] = (alpha/shrink[i]) * delta * phi_t[i];
             }
             // Update weights
             FA[move].updateWeights(deltaW);

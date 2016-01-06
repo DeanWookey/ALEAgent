@@ -18,6 +18,53 @@ import javax.imageio.ImageIO;
  * @author Craig
  */
 public class Utils {
+    
+    public static double[][] imageIntToMatrixDouble(BufferedImage img) {
+        final int[] pixels = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
+        final int width = img.getWidth();
+        final int height = img.getHeight();
+        double[][] result = new double[height][width];
+        for (int i = 0, row = 0, col = 0; i < pixels.length; i++) {
+            result[row][col] = pixels[i];
+            col++;
+            if (col == width) {
+                col = 0;
+                row++;
+            }
+        }
+
+        return result;
+    }
+    
+    public static double[][] scalePixelValues(BufferedImage img, int minValue, int maxValue) {
+        return scalePixelValues(imageToMatrix(img),minValue,maxValue);
+    }
+    
+    public static double[][] scalePixelValues(int[][] img, int minValue, int maxValue) {
+        int height = img.length;
+        int width = img[0].length;
+        double[][] ret = new double[height][width];
+        
+        for(int i = 0; i < height; i++) {
+            for(int j = 0; j < width; j++) {
+                ret[i][j] = (img[i][j] - minValue)/(double)(maxValue - minValue);
+            }
+        }
+        
+        return ret;
+    }
+    
+    public static void scalePixelValues(double[][] img, int minValue, int maxValue) {
+        int height = img.length;
+        int width = img[0].length;
+        
+        for(int i = 0; i < height; i++) {
+            for(int j = 0; j < width; j++) {
+                img[i][j] = (img[i][j] - minValue)/(double)(maxValue - minValue);
+            }
+        }
+
+    }
 
     public static int[][] imageToMatrix(BufferedImage img) {
         int type = img.getType();
@@ -79,7 +126,7 @@ public class Utils {
             final int pixelLength = 3;
             for (int pixel = 0, row = 0, col = 0; pixel < pixels.length; pixel += pixelLength) {
                 int argb = 0;
-                argb += -16777216; // 255 alpha
+                //argb += -16777216; // 255 alpha
                 argb += ((int) pixels[pixel] & 0xff); // blue
                 argb += (((int) pixels[pixel + 1] & 0xff) << 8); // green
                 argb += (((int) pixels[pixel + 2] & 0xff) << 16); // red
@@ -123,10 +170,12 @@ public class Utils {
 
         //DeepMind used some form of bilinear interpolation
         Graphics2D g = scaledImage.createGraphics();
-        /*g.setRenderingHint(
+        /*
+        g.setRenderingHint(
          RenderingHints.KEY_INTERPOLATION,
          RenderingHints.VALUE_INTERPOLATION_BILINEAR
-         );*/
+         );
+        */
         g.drawImage(img, 0, 0, width, height, null);
         g.dispose();
 
@@ -247,15 +296,28 @@ public class Utils {
             }
         }
     }
+    
+    public static BufferedImage matrixToImage(double[][] img) {
+        int height = img[0].length;
+        int width = img.length;
+        //BufferedImage.TYPE_3BYTE_BGR required to cast raster to DataBufferByte
+        BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                bi.setRGB(j, i, (int)img[i][j]);
+            }
+        }
+        return bi;
+    }
 
     public static BufferedImage matrixToImage(int[][] img) {
         int height = img[0].length;
         int width = img.length;
         //BufferedImage.TYPE_3BYTE_BGR required to cast raster to DataBufferByte
-        BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+        BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
-                bi.setRGB(j, i, (int) img[j][i]);
+                bi.setRGB(j, i, img[i][j]);
             }
         }
         return bi;
@@ -272,6 +334,18 @@ public class Utils {
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
                 bi.setRGB(j, i, (int) img[i][j]);
+            }
+        }
+        ImageIO.write(bi, "png", new File(name + ".png"));
+    }
+    
+    public static void savePNG(int[][] img, String name) throws IOException {
+        int height = img[0].length;
+        int width = img.length;
+        BufferedImage bi = new BufferedImage(width, height, TYPE_INT_RGB);
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                bi.setRGB(j, i, img[i][j]);
             }
         }
         ImageIO.write(bi, "png", new File(name + ".png"));

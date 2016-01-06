@@ -12,10 +12,26 @@ import rl.domain.State;
  * @author Craig Bester
  */
 public class Frame {
-    double[][] image;
+    public double[][] image;
+    int height;
+    int width;
     
     public Frame(double[][] image) {
         this.image = image;
+        this.height = image.length;
+        this.width = image[0].length;
+    }
+    
+    public int getHeight() {
+        return height;
+    }
+    
+    public int getWidth() {
+        return width;
+    }
+    
+    public double[][] getImage() {
+        return image;
     }
     
     public final double[] toArray() {

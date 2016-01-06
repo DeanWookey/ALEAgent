@@ -30,12 +30,16 @@ import image.Utils;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import rl.agents.QLambda;
+import rl.agents.QLambdaReplay;
 import rl.agents.QLearner;
 import rl.agents.QReplay;
+import rl.agents.QTarget;
+import rl.agents.QTargetReplay;
 import rl.agents.RLAgent;
 import rl.agents.SarsaLambda;
 import rl.domain.State;
 import rl.functionapproximation.Basis;
+import rl.functionapproximation.FourierMultiframeBasis;
 import rl.functionapproximation.LinearBasis;
 import rl.memory.Frame;
 import rl.memory.FrameHistory;
@@ -77,14 +81,17 @@ public class AtariRL {
     int numTrainingFrames = 10000;
     int numRandomReductionFrames = 2000;
 
-    double alpha = 0.014 / (imageSize * imageSize);
-    //double alpha = 0.00025; // DeepMind
-    //double gamma = 0.99;
-    double gamma = 0.95; //Was for Q-Learning but may perform better with 0.99
+    //double alpha = 1;
+    //double alpha = 0.014 / (int)Math.pow(3+1,2);
+    //double alpha = 0.014 / (imageSize * imageSize);
+    double alpha = 0.00025; // DeepMind
+    //double gamma = 0.99; //Sarsa
+    double gamma = 0.95; //Q-learning
     double lambda = 0.95;
     double epsilonStart = 1.0;
     double epsilonEnd = 0.1;
     double epsilonEvaluation = 0.05;
+    int order = 3;
 
     public AtariRL(boolean gui, String game, String pipesBasename) {
         requestReset = true;
@@ -111,12 +118,30 @@ public class AtariRL {
     public final void initLearner() {
 
         Basis[] functionApproximators = new Basis[actionSet.numActions];
+        
+        
+        //Basis test = new FourierMultiframeBasis(framesPerState,imageSize,imageSize,order);
+        
+        
         for (int i = 0; i < actionSet.numActions; i++) {
-            functionApproximators[i] = new LinearBasis(numFrames * imageSize * imageSize);
+            //functionApproximators[i] = new LinearBasis(test.getNumFunctions());
+            //functionApproximators[i].setShrink(test.getShrink());
+            
+            //functionApproximators[i] = new LinearBasis(numFrames * imageSize * imageSize);
+            functionApproximators[i] = new FourierMultiframeBasis(framesPerState,imageSize,imageSize,order);
+        
+            // Random weight initialisation - DeepMind (bounds used unclear)
+            //functionApproximators[i].randomiseWeights();
+            // Randomised weights sometimes causes learning divergence
         }
+        
+        
         //learner = new SarsaLambda(actionSet.numActions, functionApproximators[0].getNumFunctions(), functionApproximators);
-        learner = new QLearner(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);
-        //learner = new QReplay(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);
+        //learner = new QLambda(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);
+        //learner = new QLearner(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);
+        learner = new QReplay(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);
+        //learner = new QTarget(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);
+        //learner = new QTargetReplay(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);
         
         learner.setAlpha(alpha);
         learner.setGamma(gamma);
@@ -234,28 +259,36 @@ public class AtariRL {
         history.addFrame(new Frame(convertImage(image)));
 
         numFrames++;
-        rlStep(image, rlData);
+        
+        rlStep(rlData);
+        //rlStep(image,rlData);
     }
 
     private double[][] convertImage(ScreenMatrix image) {
-        //colourise (NTSC)
-        //TODO: map NTSC to grayscale in one step to improve performance
+        // Colourise (NTSC)
+        // TODO: map NTSC to grayscale in one step to improve performance
         int[][] mat = converter.convert(image.matrix);
 
-        //crop the 210x160 image to 160x160
-        //crop the mostly blank top and bottommost sections
+        // Crop the 210x160 image to 160x160
+        // We remove the mostly blank top and bottommost sections
         mat = Utils.crop(mat, 0, 33, 160, 160);
 
-        //grayscale
+        // Grayscale
         Utils.grayscale(mat);
 
-        //scale down to 84x84
+        // Scale down to 84x84
         BufferedImage bi = Utils.scale(Utils.matrixToImage(mat), 84, 84);
         //double[][] img = Utils.imageToDoubleMatrix(bi);
 
-        //cosine transform
-        double[][] img = CosineTransform.transform(bi);
+        // Cosine transform
+        //double[][] img = CosineTransform.transform(bi);
+        
+        // Scale pixel values onto [0,1]
+        //Utils.scalePixelValues(img, 0, 0xFFFFFF);
+        double[][] img = Utils.scalePixelValues(bi, 0, 0xFFFFFF);
 
+        //double[][] img = Utils.imageIntToMatrixDouble(bi);
+        
         return img;
     }
 
@@ -268,10 +301,12 @@ public class AtariRL {
         return reward;
     }
 
-    public void rlStep(ScreenMatrix image, RLData rlData) {
+    public void rlStep(RLData rlData) {
+    //public void rlStep(ScreenMatrix image, RLData rlData) {
 
-        // Obtain the feature vector
-        State s = history.getScaledState();
+        // Obtain the feature vector from frame history
+        //State s = history.getState();
+        State s = history.getFourierState();
         s.setTerminal(rlData.isTerminal);
 
         if (firstStep) {

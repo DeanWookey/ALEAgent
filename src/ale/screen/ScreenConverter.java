@@ -44,7 +44,8 @@ public class ScreenConverter {
     public BufferedImage convert(ScreenMatrix m) {
         // Create a new image, of the same width and height as the screen matrix
         // TYPE_3BYTE_BGR required to cast raster to DataBufferByte
-        BufferedImage img = new BufferedImage(m.width, m.height, BufferedImage.TYPE_3BYTE_BGR);
+        //BufferedImage img = new BufferedImage(m.width, m.height, BufferedImage.TYPE_3BYTE_BGR);
+        BufferedImage img = new BufferedImage(m.width, m.height, BufferedImage.TYPE_INT_RGB);
 
         // Map each pixel
         for (int x = 0; x < m.width; x++)

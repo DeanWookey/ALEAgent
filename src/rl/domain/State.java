@@ -6,78 +6,132 @@
 package rl.domain;
 
 import java.util.Arrays;
+import rl.memory.Frame;
 
 /**
  *
  * @author Craig Bester
  */
-public class State implements Cloneable{
-    //Use a cropped, grayscaled, cosine transformed game frame as a State
+public class State {
+
+    //Uses several cropped and grayscaled game frames as a State
+
+    //protected double[] arr;
+    //protected Frame[] vars;
     protected double[] vars;
+    
     protected int numDimensions;
     protected boolean isTerminal;
+    private boolean replaced;
+
+   /* public State(Frame[] images) {
+        this.vars = images;
+        
+        this.numDimensions = vars.length*vars[0].getHeight()*vars[0].getWidth();
+        this.isTerminal = false;
+        
+        replaced = false;
+    }
+
+    public State(Frame[] images, boolean isTerminal) {
+        this.vars = images;
+        this.numDimensions = vars.length;
+        this.isTerminal = isTerminal;
+        
+        replaced = false;
+    }
+
+    public void replace(Frame[] vars, boolean isTerminal) {
+        this.vars = vars;
+        this.isTerminal = isTerminal;
+        replaced = true;
+    }*/
     
-    public State(double[] img) {
-        this.vars = img;
+    public State(double[] vars) {
+        this.vars = vars;
+        
         this.numDimensions = vars.length;
         this.isTerminal = false;
+        
+        replaced = false;
     }
-    
-    public State(double[] img, boolean isTerminal) {
-        this.vars = img;
+
+    public State(double[] vars, boolean isTerminal) {
+        this.vars = vars;
         this.numDimensions = vars.length;
         this.isTerminal = isTerminal;
+        
+        replaced = false;
+    }
+
+    public void replace(double[] vars, boolean isTerminal) {
+        //this.vars = vars;
+        
+        //overwrite instead of reference since garbage collector
+        System.arraycopy(vars, 0, this.vars, 0, numDimensions);
+        this.isTerminal = isTerminal;
+        replaced = true;
     }
     
-    public State(double[][] img, boolean isTerminal) {
-        this.vars = new double[img.length*img[0].length];
-        for(int i = 0; i < img.length; i++) {
-            System.arraycopy(img[i], 0, vars, i*img[0].length, img[0].length);
-            /*for(int j = 0; j < img[0].length; j++) {
-                vars[i*img[0].length + j] = img[i][j];
-            }*/
-        }
-        this.numDimensions = vars.length;
-        this.isTerminal = isTerminal;
+    public void replace(State s) {
+        //this.vars = vars;
+        
+        //overwrite instead of reference since garbage collector
+        System.arraycopy(s.vars, 0, this.vars, 0, numDimensions);
+        this.isTerminal = s.isTerminal();
+        replaced = true;
     }
-    
-    public State(int[][] img, boolean isTerminal) {
-        this.vars = new double[img.length*img[0].length];
-        for(int i = 0; i < img.length; i++) {
-            for(int j = 0; j < img[0].length; j++) {
-                vars[i*img[0].length + j] = img[i][j];
-            }
-        }
-        this.numDimensions = vars.length;
-        this.isTerminal = isTerminal;
-    }
+
+    /*// Cannot simply return a double array since we want to have a basis per frame
+    public Frame[] getState() {
+        return vars;
+    }*/
     
     public double[] getState() {
         return vars;
     }
     
+    /*public double[] getArray() {
+        if(arr==null) {
+            arr = new double[numDimensions];
+            int height = vars[0].getHeight();
+            int width = vars[0].getWidth();
+
+            int j = 0;
+            for (Frame f : vars) {
+                for (int i = 0; i < height; i++) {
+                    System.arraycopy(f.image[i], 0, arr, i * j * height, width);
+                }
+                j++;
+            }
+            replaced=false;
+        }
+        else if(replaced) {
+            int height = vars[0].getHeight();
+            int width = vars[0].getWidth();
+
+            int j = 0;
+            for (Frame f : vars) {
+                for (int i = 0; i < height; i++) {
+                    System.arraycopy(f.image[i], 0, arr, i * j * height, width);
+                }
+                j++;
+            }
+            replaced=false;
+        }
+        return arr;
+    }*/
+
     public int getStateLength() {
         return numDimensions;
-    } 
-    
+    }
+
     public void setTerminal(boolean terminal) {
         isTerminal = terminal;
     }
-    
+
     public boolean isTerminal() {
         return isTerminal;
     }
     
-    @Override
-    protected Object clone() {
-        try {
-            State s = (State)super.clone();
-            s.vars = Arrays.copyOf(this.vars,vars.length);
-            s.isTerminal = this.isTerminal;
-            return s;
-        }
-        catch (CloneNotSupportedException e) {
-            return null;
-        }
-    }
 }

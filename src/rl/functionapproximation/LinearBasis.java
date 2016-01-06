@@ -1,7 +1,10 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package rl.functionapproximation;
 
-import java.util.Arrays;
-import java.util.Random;
 import rl.domain.State;
 
 /**
@@ -47,6 +50,16 @@ public class LinearBasis extends Basis {
         // features (dQ/dW) are simply the state variables
         double[] phi = s.getState();//.clone(); // precaution to prevent changes
         return phi;
+    }
+
+    @Override
+    public double getValue(double[] phi) {
+        double Q = 0;
+        // Q = Sum(wi*xi)
+        for(int i = 0; i < numFeatures; i++) {
+            Q += weights[i]*phi[i];
+        }
+        return Q;
     }
     
 }

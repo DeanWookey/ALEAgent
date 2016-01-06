@@ -24,8 +24,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import rl.domain.ScaledState;
 import rl.domain.State;
+import rl.functionapproximation.FourierMultiframeBasis;
 
 /**
  * A time-ordered list of frames.
@@ -53,7 +53,7 @@ public class FrameHistory implements Cloneable {
      */
     public FrameHistory(int stateLength) {
         this.maxLength = stateLength;
-        frames = new LinkedList<Frame>();
+        frames = new LinkedList<>();
     }
 
     /**
@@ -87,7 +87,29 @@ public class FrameHistory implements Cloneable {
     public Frame getLastFrame(int t) {
         return frames.get(frames.size() - t - 1);
     }
+    
+    /*
+    public State getState() {
+        Frame[] arr = new Frame[maxLength];
+        
+        int j = 0;
+        // Duplicate first frame until we have enough frames for a single state
+        if (frames.size() < maxLength) {
+            int repeat = maxLength-frames.size();
+            for(;j<repeat;j++) {
+                arr[j] = frames.getFirst();
+            }
+        }
+        for(Frame f : frames) {
+            arr[j] = f;
+            j++;
+        }
+        
+        return new State(arr);
+    }
+    */
 
+    
     public State getState() {
         double[][] img = frames.getFirst().image;
         int height = img.length;
@@ -113,6 +135,7 @@ public class FrameHistory implements Cloneable {
         return (new State(ret));
     }
 
+    /*
     double[] minValues;
     double[] maxValues;
 
@@ -149,7 +172,43 @@ public class FrameHistory implements Cloneable {
         }
         return (new ScaledState(ret, minValues, maxValues));
     }
+    */
+    
+    FourierMultiframeBasis fa;
+    int order = 3;
+    public State getFourierState() {
+        double[][] img = frames.getFirst().image;
+        int height = img.length;
+        int width = img[0].length;
+        
+        if(fa == null) {
+            fa = new FourierMultiframeBasis(maxLength, height, width, order);
+        }
+        
+        
+        double[] ret = new double[maxLength * height * width];
+        int j = 0;
+        
+        // Duplicate first frame until we have enough frames for a single state
+        if (frames.size() < maxLength) {
+            int repeat = maxLength-frames.size();
+            for(;j<repeat;j++) {
+                for (int i = 0; i < height; i++) {
+                    System.arraycopy(img[i], 0, ret, i * j * height, width);
+                }
+            }
+        }
+        for (Frame f : frames) {
+            for (int i = 0; i < height; i++) {
+                System.arraycopy(f.image[i], 0, ret, i * j * height, width);
+            }
+            j++;
+        }
+        
+        return (new State(fa.computeFeatures(ret)));
+    }
 
+    @Override
     public Object clone() {
         try {
             FrameHistory obj = (FrameHistory) super.clone();
