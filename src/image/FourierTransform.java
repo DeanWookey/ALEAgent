@@ -36,10 +36,10 @@ public class FourierTransform {
     }
     
     public double[] transform(Frame fimg) {
-        int xco, yco;
+        //int xco, yco;
         double[] phi = new double[numFeatures];
         double[][] img = fimg.image;
-        for (int k = 0; k < numFeatures; k++) {
+        /*for (int k = 0; k < numFeatures; k++) {
             // have to reset old value when overwriting
             phi[k] = 0;
 
@@ -51,7 +51,23 @@ public class FourierTransform {
                     phi[k] += img[y][x] * cosine[yco * y][xco * x];
                 }
             }
+        }*/
+        
+        for (int yco = 0; yco < order; yco++) {
+            for (int xco = 0; xco < order; xco++) {
+                // have to reset old value when overwriting
+                int index = yco*xco+xco;
+                phi[index] = 0;
+                
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        // x,y already scaled in cosine pre-calculation
+                        phi[index] += img[y][x] * cosine[yco * y][xco * x];
+                    }
+                }
+            }
         }
+        
         return phi;
     }
     

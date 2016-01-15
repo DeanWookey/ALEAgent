@@ -89,8 +89,8 @@ public class AtariRL {
     double alpha = 0.014 / (int)Math.pow(order+1,2); // should be #frames*#basis_functions?
     //double alpha = 0.014 / (imageSize * imageSize);
     //double alpha = 0.00025; // DeepMind
-    //double gamma = 0.99; //Sarsa
-    double gamma = 0.95; //Q-learning
+    double gamma = 0.99; //Sarsa
+    //double gamma = 0.95; //Q-learning
     double lambda = 0.95;
     double epsilonStart = 1.0;
     double epsilonEnd = 0.1;

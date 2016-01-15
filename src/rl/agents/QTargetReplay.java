@@ -131,9 +131,12 @@ public class QTargetReplay extends RLAgent {
 
     public void batchUpdate() {
         ArrayList<Sample> ls = memory.getRandomBatch(batchSize);
-        ls.stream().forEach((s) -> {
+        for(Sample s : ls) {
             updateQ(s);
-        });
+        }
+        /*ls.stream().forEach((s) -> {
+            updateQ(s);
+        });*/
     }
 
     public void updateQ(Sample s) {
