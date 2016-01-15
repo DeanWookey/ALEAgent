@@ -26,6 +26,7 @@ import ale.screen.NTSCPalette;
 import ale.screen.ScreenConverter;
 import ale.screen.ScreenMatrix;
 import image.CosineTransform;
+import image.FourierTransform;
 import image.Utils;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -43,6 +44,7 @@ import rl.functionapproximation.FourierMultiframeBasis;
 import rl.functionapproximation.LinearBasis;
 import rl.memory.Frame;
 import rl.memory.FrameHistory;
+import rl.memory.FrameHistory_Fourier;
 
 
 /*
@@ -60,7 +62,8 @@ public class AtariRL {
     ActionSet actionSet;
     AbstractUI ui;
     ScreenConverter converter;
-    FrameHistory history;
+    //FrameHistory history;
+    FrameHistory_Fourier history;
 
     String namedPipesBasename;
     String gameName;
@@ -81,17 +84,18 @@ public class AtariRL {
     int numTrainingFrames = 10000;
     int numRandomReductionFrames = 2000;
 
+    int order = 5;
     //double alpha = 1;
-    //double alpha = 0.014 / (int)Math.pow(3+1,2);
+    double alpha = 0.014 / (int)Math.pow(order+1,2); // should be #frames*#basis_functions?
     //double alpha = 0.014 / (imageSize * imageSize);
-    double alpha = 0.00025; // DeepMind
+    //double alpha = 0.00025; // DeepMind
     //double gamma = 0.99; //Sarsa
     double gamma = 0.95; //Q-learning
     double lambda = 0.95;
     double epsilonStart = 1.0;
     double epsilonEnd = 0.1;
     double epsilonEvaluation = 0.05;
-    int order = 3;
+    
 
     public AtariRL(boolean gui, String game, String pipesBasename) {
         requestReset = true;
@@ -109,7 +113,8 @@ public class AtariRL {
         }
         actionSet = new ActionSet(gameName);
         converter = new ScreenConverter(new NTSCPalette());
-        history = new FrameHistory(framesPerState);
+        //history = new FrameHistory(framesPerState);
+        history = new FrameHistory_Fourier(framesPerState,new FourierTransform(imageSize,imageSize,order));
 
         init();
         initLearner();
@@ -306,7 +311,7 @@ public class AtariRL {
 
         // Obtain the feature vector from frame history
         //State s = history.getState();
-        State s = history.getFourierState();
+        State s = history.getState();
         s.setTerminal(rlData.isTerminal);
 
         if (firstStep) {
@@ -382,6 +387,10 @@ public class AtariRL {
             System.err.println(numEvaluationEpisodes + " episodes, terminating...");
         }
     }
+    
+    public void setEvaluationEpisodes(int numEpisodes) {
+        this.numEvaluationEpisodes = numEpisodes;
+    }
 
     public void setTrainingFrames(int numFrames) {
         this.numTrainingFrames = numFrames;
@@ -428,6 +437,7 @@ public class AtariRL {
         String namedPipesName = null;
         int trainingFrames = -1;
         int randomFrames = -1;
+        int evaluationEpisodes = -1;
 
         // Parse arguments
         int argIndex = 0;
@@ -461,6 +471,11 @@ public class AtariRL {
                 randomFrames = Integer.parseInt(args[argIndex + 1]);
 
                 argIndex += 2;
+            } // -evaluation <episodes>: sets the number of episodes over which to evaluate the agent
+            else if (args[argIndex].equals("-evaluation") && (argIndex + 1) < args.length) {
+                evaluationEpisodes = Integer.parseInt(args[argIndex + 1]);
+
+                argIndex += 2;
             } // If the argument is unrecognized, exit
             else {
                 printUsage();
@@ -479,6 +494,9 @@ public class AtariRL {
         }
         if (randomFrames >= 0) {
             ar.setRandomReductionFrames(randomFrames);
+        }
+        if (evaluationEpisodes >= 0) {
+            ar.setEvaluationEpisodes(evaluationEpisodes);
         }
 
         ar.run();

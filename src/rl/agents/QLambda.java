@@ -150,7 +150,7 @@ public class QLambda extends RLAgent{
         }
         // epsilon_alpha < 0, we have good bounds 
         if (epsilon_alpha < 0.0) {
-            alpha = Math.min(Math.abs(1.0 / epsilon_alpha), alpha);
+            alpha = Math.min(1.0 / Math.abs(epsilon_alpha), alpha);
         }
         
         

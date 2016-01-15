@@ -175,7 +175,7 @@ public class FrameHistory implements Cloneable {
     */
     
     FourierMultiframeBasis fa;
-    int order = 3;
+    int order = 15;
     public State getFourierState() {
         double[][] img = frames.getFirst().image;
         int height = img.length;
