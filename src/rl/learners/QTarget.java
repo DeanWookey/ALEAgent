@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package rl.agents;
+package rl.learners;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -15,33 +15,34 @@ import rl.functionapproximation.LinearBasis;
  *
  * @author Craig
  */
-public class SarsaLambda extends RLAgent{
+public class QTarget extends RLAgent{
     
     Random random;
-    double[][] traces;
+    Basis[] targetQ;
+    int targetUpdateFrequency = 100;
 
-    public SarsaLambda(int numActions, int numFeatures) {
+    public QTarget(int numActions, int numFeatures) {
         super(numActions, numFeatures);
         random = new Random();
         FA = new LinearBasis[numActions];
+        targetQ = new LinearBasis[numActions];
         for(int i = 0; i < numActions; i++) {
             FA[i] = new LinearBasis(numFeatures);
+            targetQ[i] = (LinearBasis)((LinearBasis)FA[i]).clone();
         }
-        traces = new double[numActions][numFeatures];
-        resetTraces();
     }
     
-    public SarsaLambda(int numActions, int numFeatures, Basis[] functionApproximators) {
+    public QTarget(int numActions, int numFeatures, Basis[] functionApproximators) {
         super(numActions, numFeatures,functionApproximators);
+        targetQ = new Basis[numActions];
+        for(int i = 0; i < numActions; i++) {
+            targetQ[i] = (Basis)((Basis)FA[i]).clone();
+        }
         random = new Random();
-        traces = new double[numActions][numFeatures];
-        resetTraces();
     }
 
     @Override
     public int agent_start(State s) {
-        resetTraces();
-        
         lastAction = getAction(s);
         lastState = s;
         return lastAction;
@@ -50,8 +51,14 @@ public class SarsaLambda extends RLAgent{
     @Override
     public int agent_step(double reward, State s) {
         int action = getAction(s);
+        
+        stepNumber++;
+        if(stepNumber%targetUpdateFrequency==0) {
+            updateTargetQ();
+        }
+        
         addSample(lastState,lastAction,reward,s,action);
-        lastState = s;
+        lastState.replace(s); //will throw null exception if agent_start not called at least once before agent_step
         lastAction = action;
         return action;
     }
@@ -60,14 +67,7 @@ public class SarsaLambda extends RLAgent{
     public void agent_end(double reward) {
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
-    public final void resetTraces() {
-        for(int i = 0; i < numActions; i++) {
-            for(int j = 0; j < numFeatures; j++) {
-                traces[i][j] = 0;
-            }
-        }
-    }
+
 
     public int getAction(State s) {
         int action;
@@ -107,38 +107,38 @@ public class SarsaLambda extends RLAgent{
         }
         return bestMove;
     }
+    
+    private void updateTargetQ() {
+        for(int i = 0; i < numActions; i++) {
+            targetQ[i].setWeights(FA[i].getWeights());
+        }
+    }
 
     public void addSample(State currState, int move, double reward, State newState, int nextMove) {
         //System.err.println("LastQ:"+FA[move].getValue(currState));
+        nextMove = greedyMove(newState);
         
-        // Decay traces
-        for (int a = 0; a < numActions; a++) {
-            for (int j = 0; j < FA[a].getNumFunctions(); j++) {
-                traces[a][j] = traces[a][j] * gamma * lambda;
-            }
-        }
-        
-        // Update traces
-        double[] phi = FA[move].computeFeatures(currState);
-        for (int k = 0; k < FA[move].getNumFunctions(); k++) {
-            traces[move][k] += phi[k];
+        double[] phi_t = FA[move].computeFeatures(currState);
+        double[] phi_tp = null;
+        if ((!newState.isTerminal()) && (nextMove != -1)) {
+            phi_tp = FA[nextMove].computeFeatures(newState);
         }
         
         // Alpha scaling
-        double epsilon_alpha = 0.0;
+        // Formula?
+        // ea = SUM(gamma*f(i)*(dQ/dw) - f(i)*(dQ/dw))  ??
+        // Where Q = SUM(w(i)*f(i))
         double[] shrink = FA[move].getShrink();
+        double epsilon_alpha = 0.0;
         if ((!newState.isTerminal()) && (nextMove != -1)) {
-            double[] phi_tp = FA[nextMove].computeFeatures(newState);
-            double[] phi_t = FA[move].computeFeatures(currState);
             double[] nextShrink = FA[nextMove].getShrink();
             for (int k = 0; k < FA[move].getNumFunctions(); k++) {
-                epsilon_alpha += gamma * phi_tp[k] * (traces[nextMove][k]/nextShrink[k]) - phi_t[k] * (traces[move][k]/shrink[k]);
+                epsilon_alpha += gamma * phi_tp[k] * phi_tp[k] / nextShrink[k] - phi_t[k] * phi_t[k] / shrink[k];
             }
         } else {
             // terminal state - calculate only from last move
-            double[] phi_t = FA[move].computeFeatures(currState);
             for (int k = 0; k < FA[move].getNumFunctions(); k++) {
-                epsilon_alpha += -1.0 * phi_t[k] * (traces[move][k]/shrink[k]);
+                epsilon_alpha += -1.0 * phi_t[k] * phi_t[k] / shrink[k];
             }
         }
         // epsilon_alpha < 0, we have good bounds 
@@ -148,10 +148,11 @@ public class SarsaLambda extends RLAgent{
         
         
         // calculate temporal difference error
-        double delta = reward - FA[move].getValue(currState);
+        //double delta = reward - FA[move].getValue(currState);
+        double delta = reward - FA[move].getValue(phi_t);
         // not end of episode -> update delta with next estimated value
         if ((!newState.isTerminal()) && (nextMove != -1)) {
-            delta += gamma * FA[nextMove].getValue(newState);
+            delta += gamma * targetQ[nextMove].getValue(phi_tp);
         }
 
         // Check for divergence
@@ -160,16 +161,33 @@ public class SarsaLambda extends RLAgent{
             System.exit(1);
         }
 
-        for (int a = 0; a < numActions; a++) {
-            double[] deltaW = new double[FA[a].getNumFunctions()];
-            for (int i = 0; i < FA[a].getNumFunctions(); i++) {
-                deltaW[i] = alpha/FA[a].getShrink()[i] * delta * traces[a][i];
+
+        // Update weights
+        if ((!newState.isTerminal()) && (nextMove != -1)) {
+            // Should only the concerned basis functions be updated?
+
+            double[] deltaW = new double[FA[move].getNumFunctions()];
+            for (int i = 0; i < FA[move].getNumFunctions(); i++) {
+                deltaW[i] = (alpha/shrink[i]) * delta * (phi_t[i] - gamma*phi_tp[i]);
             }
+            /*double[] deltaW2 = new double[FA[nextMove].getNumFunctions()];
+            for (int i = 0; i < FA[nextMove].getNumFunctions(); i++) {
+                deltaW2[i] = alpha / FA[nextMove].getShrink()[i] * delta * (phi[i] - gamma*phi2[i]);
+            }*/
 
             // Update weights
-            FA[a].updateWeights(deltaW);
+            FA[move].updateWeights(deltaW);
+            //FA[nextMove].updateWeights(deltaW2);
+        } 
+        else {
+            // Terminal state
+            double[] deltaW = new double[FA[move].getNumFunctions()];
+            for (int i = 0; i < FA[move].getNumFunctions(); i++) {
+                deltaW[i] = (alpha/shrink[i]) * delta * phi_t[i];
+            }
+            // Update weights
+            FA[move].updateWeights(deltaW);
         }
-
     }
 
 }

@@ -3,47 +3,37 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package rl.agents;
+package rl.learners;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.Random;
 import rl.domain.State;
 import rl.functionapproximation.Basis;
 import rl.functionapproximation.LinearBasis;
-import rl.memory.Memory;
-import rl.memory.Sample;
 
 /**
  *
  * @author Craig
  */
-public class QLambdaReplay extends RLAgent{
+public class QLambda extends RLAgent{
     
     Random random;
-    Memory memory;
     double[][] traces;
-    
-    final int updateFrequency = 4;
-    final int batchSize = 32;
-    final int replaySize = 10000;
 
-    public QLambdaReplay(int numActions, int numFeatures) {
+    public QLambda(int numActions, int numFeatures) {
         super(numActions, numFeatures);
         random = new Random();
         FA = new LinearBasis[numActions];
         for(int i = 0; i < numActions; i++) {
             FA[i] = new LinearBasis(numFeatures);
         }
-        memory = new Memory(replaySize);
         traces = new double[numActions][numFeatures];
     }
     
-    public QLambdaReplay(int numActions, int numFeatures, Basis[] functionApproximators) {
+    public QLambda(int numActions, int numFeatures, Basis[] functionApproximators) {
         super(numActions, numFeatures,functionApproximators);
         random = new Random();
-        memory = new Memory(replaySize);
         traces = new double[numActions][numFeatures];
     }
 
@@ -68,13 +58,12 @@ public class QLambdaReplay extends RLAgent{
     public void agent_end(double reward) {
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
+
     public final void resetTraces() {
         for(int i = 0; i < numActions; i++) {
             Arrays.fill(traces[i],0);
         }
     }
-
 
     public int getAction(State s) {
         int action;
@@ -116,44 +105,27 @@ public class QLambdaReplay extends RLAgent{
     }
 
     public void addSample(State currState, int move, double reward, State newState, int nextMove) {
-        memory.addSample(currState,move,reward,newState);
-        stepNumber++;
-        if(stepNumber >= batchSize && stepNumber%updateFrequency == 0) {
-            batchUpdate();
-        }
-    }
-    
-    public void batchUpdate() {
-        // To exploit the traces, we get a random trajectory instead of a batch
-        resetTraces();
-        ArrayList<Sample> ls = memory.getRandomTrajectory(batchSize);
-        for(Sample s : ls) {
-            updateQ(s);
-        }
-        /*ls.stream().forEach((s) -> {
-            updateQ(s);
-        });*/
-    }
-    
-    public void updateQ(Sample s) {
-        State currState = s.state;
-        int move = s.action;
-        double reward = s.reward;
-        State newState = s.nextState;
         //System.err.println("LastQ:"+FA[move].getValue(currState));
-        int nextMove = greedyMove(newState);
+        //int nextMove = greedyMove(newState);
         
+        // Get feature vectors
         double[] phi_t = FA[move].computeFeatures(currState);
         double[] phi_tp = null;
         if ((!newState.isTerminal()) && (nextMove != -1)) {
             phi_tp = FA[nextMove].computeFeatures(newState);
         }
         
-        // Decay traces
-        for (int a = 0; a < numActions; a++) {
-            for (int j = 0; j < FA[a].getNumFunctions(); j++) {
-                traces[a][j] = traces[a][j] * gamma * lambda;
+        // Decay traces -- Watkin's Q(lambda)
+        if(nextMove == greedyMove(newState)) {
+            for (int a = 0; a < numActions; a++) {
+                for (int j = 0; j < FA[a].getNumFunctions(); j++) {
+                    traces[a][j] = traces[a][j] * gamma * lambda;
+                }
             }
+        }
+        // Non-greedy action -> zero traces
+        else {
+            resetTraces();
         }
         
         // Update traces
@@ -178,7 +150,7 @@ public class QLambdaReplay extends RLAgent{
         }
         // epsilon_alpha < 0, we have good bounds 
         if (epsilon_alpha < 0.0) {
-            alpha = Math.min(Math.abs(1.0 / epsilon_alpha), alpha);
+            alpha = Math.min(1.0 / Math.abs(epsilon_alpha), alpha);
         }
         
         
@@ -205,6 +177,7 @@ public class QLambdaReplay extends RLAgent{
             // Update weights
             FA[a].updateWeights(deltaW);
         }
+
     }
-    
+
 }

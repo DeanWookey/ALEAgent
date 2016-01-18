@@ -3,44 +3,34 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package rl.agents;
+package rl.learners;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Random;
 import rl.domain.State;
 import rl.functionapproximation.Basis;
 import rl.functionapproximation.LinearBasis;
-import rl.memory.Memory;
-import rl.memory.Sample;
 
 /**
  *
  * @author Craig
  */
-public class QReplay extends RLAgent{
+public class QLearner extends RLAgent{
     
     Random random;
-    Memory memory;
-    
-    final int updateFrequency = 4;
-    final int batchSize = 32;
-    final int replaySize = 10000;
 
-    public QReplay(int numActions, int numFeatures) {
+    public QLearner(int numActions, int numFeatures) {
         super(numActions, numFeatures);
         random = new Random();
         FA = new LinearBasis[numActions];
         for(int i = 0; i < numActions; i++) {
             FA[i] = new LinearBasis(numFeatures);
         }
-        memory = new Memory(replaySize);
     }
     
-    public QReplay(int numActions, int numFeatures, Basis[] functionApproximators) {
+    public QLearner(int numActions, int numFeatures, Basis[] functionApproximators) {
         super(numActions, numFeatures,functionApproximators);
         random = new Random();
-        memory = new Memory(replaySize);
     }
 
     @Override
@@ -54,7 +44,7 @@ public class QReplay extends RLAgent{
     public int agent_step(double reward, State s) {
         int action = getAction(s);
         addSample(lastState,lastAction,reward,s,action);
-        lastState = s;
+        lastState.replace(s); //will throw null exception if agent_start not called at least once before agent_step
         lastAction = action;
         return action;
     }
@@ -105,30 +95,8 @@ public class QReplay extends RLAgent{
     }
 
     public void addSample(State currState, int move, double reward, State newState, int nextMove) {
-        memory.addSample(currState,move,reward,newState);
-        stepNumber++;
-        if(stepNumber >= batchSize && stepNumber%updateFrequency == 0) {
-            batchUpdate();
-        }
-    }
-    
-    public void batchUpdate() {
-        ArrayList<Sample> ls = memory.getRandomBatch(batchSize);
-        for(Sample s : ls) {
-            updateQ(s);
-        }
-        /*ls.stream().forEach((s) -> {
-            updateQ(s);
-        });*/
-    }
-    
-    public void updateQ(Sample s) {
-        State currState = s.state;
-        int move = s.action;
-        double reward = s.reward;
-        State newState = s.nextState;
         //System.err.println("LastQ:"+FA[move].getValue(currState));
-        int nextMove = greedyMove(newState);
+        nextMove = greedyMove(newState);
         
         double[] phi_t = FA[move].computeFeatures(currState);
         double[] phi_tp = null;
@@ -202,5 +170,5 @@ public class QReplay extends RLAgent{
             FA[move].updateWeights(deltaW);
         }
     }
-    
+
 }

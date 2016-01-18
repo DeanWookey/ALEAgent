@@ -1,4 +1,4 @@
-package rl.agents;
+package rl.learners;
 
 import java.util.Random;
 import rl.domain.State;

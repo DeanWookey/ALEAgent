@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package rl.agents;
+package rl.learners;
 
 import rl.functionapproximation.Basis;
 import rl.domain.State;

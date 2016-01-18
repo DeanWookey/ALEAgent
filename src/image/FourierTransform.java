@@ -12,20 +12,22 @@ import rl.memory.Frame;
  * @author Craig Bester
  */
 public class FourierTransform {
+
     // Static to save memory
     //  So don't use several bases with different parameters or everything dies
+
     static double[][] cosine;
     static int[][] coefficients; //same for every frame
-    
+
     final int numDimensions;
     final int numFeatures;
     final int height;
     final int width;
     final int order;
-    
+
     public FourierTransform(int height, int width, int order) {
         this.numDimensions = 2;
-        this.numFeatures = (int)Math.pow(order+1,numDimensions);
+        this.numFeatures = (int) Math.pow(order + 1, numDimensions);
 
         this.order = order;
         this.height = height;
@@ -34,31 +36,31 @@ public class FourierTransform {
         computeFourierCoefficients();
         precalculateCosine();
     }
-    
+
     public double[] transform(Frame fimg) {
         //int xco, yco;
         double[] phi = new double[numFeatures];
         double[][] img = fimg.image;
         /*for (int k = 0; k < numFeatures; k++) {
-            // have to reset old value when overwriting
-            phi[k] = 0;
+         // have to reset old value when overwriting
+         phi[k] = 0;
 
-            xco = coefficients[k][1];
-            yco = coefficients[k][0];
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    // x,y already scaled in cosine pre-calculation
-                    phi[k] += img[y][x] * cosine[yco * y][xco * x];
-                }
-            }
-        }*/
-        
+         xco = coefficients[k][1];
+         yco = coefficients[k][0];
+         for (int y = 0; y < height; y++) {
+         for (int x = 0; x < width; x++) {
+         // x,y already scaled in cosine pre-calculation
+         phi[k] += img[y][x] * cosine[yco * y][xco * x];
+         }
+         }
+         }*/
+
         for (int yco = 0; yco < order; yco++) {
             for (int xco = 0; xco < order; xco++) {
                 // have to reset old value when overwriting
-                int index = yco*xco+xco;
+                int index = yco * xco + xco;
                 phi[index] = 0;
-                
+
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
                         // x,y already scaled in cosine pre-calculation
@@ -67,36 +69,34 @@ public class FourierTransform {
                 }
             }
         }
-        
+
         return phi;
     }
-    
-    /** Since we use discrete, bounded indices as input, we can pre-calculate
-     *   all cosine values (may take a while but probably worth it)
+
+    /**
+     * Since we use discrete, bounded indices as input, we can pre-calculate all
+     * cosine values (may take a while but probably worth it)
      */
     private void precalculateCosine() {
-        if(cosine == null) {
-            cosine = new double[order*height][order*width];
-            // SHOULD WE SCALE x AND y? Probably
-            for(int i = 0; i < numFeatures; i++) {
+        if (cosine == null) {
+            cosine = new double[order * height][order * width];
+            for (int i = 0; i < numFeatures; i++) {
                 int xco = coefficients[i][1];
                 int yco = coefficients[i][0];
-                for(int y = 0; y < height; y++) {
-                    for(int x = 0; x < width; x++) {
-                        double xs = ((double)x/width);
-                        //double xs = x;
-                        double ys = ((double)y/height);
-                        //double ys = y;
-                        cosine[yco*y][xco*x] = Math.cos(Math.PI*(yco*ys+xco*xs));
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        double xs = ((double) x / width);
+                        double ys = ((double) y / height);
+                        cosine[yco * y][xco * x] = Math.cos(Math.PI * (yco * ys + xco * xs));
                         //System.err.println("cos(pi*("+yco+"*"+ys+"+"+xco+"*"+xs+")="+cosine[yco*y][xco*x]);
                     }
                 }
             }
         }
     }
-    
+
     private void computeFourierCoefficients() {
-        if(coefficients == null) {
+        if (coefficients == null) {
             coefficients = new int[numFeatures][numDimensions];
             int pos = 0;
             int c[] = new int[numDimensions];
@@ -110,13 +110,13 @@ public class FourierTransform {
                 Iterate(c, numDimensions, order);
             } while (c[0] <= order);
         }
-        
+
         /*for(int i = 0; i < coefficients.length; i++) {
-            for(int j = 0; j < coefficients[0].length; j++) {
-                System.err.print(coefficients[i][j]+",");
-            }
-            System.err.println();
-        }*/
+         for(int j = 0; j < coefficients[0].length; j++) {
+         System.err.print(coefficients[i][j]+",");
+         }
+         System.err.println();
+         }*/
     }
 
     private void Iterate(int[] c, int pos, int Degree) {
