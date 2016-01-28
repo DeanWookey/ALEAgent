@@ -15,7 +15,7 @@ import rl.functionapproximation.LinearBasis;
  *
  * @author Craig
  */
-public class SarsaLambda extends RLAgent{
+public class SarsaLambda extends Learner{
     
     Random random;
     double[][] traces;
@@ -111,6 +111,12 @@ public class SarsaLambda extends RLAgent{
     public void addSample(State currState, int move, double reward, State newState, int nextMove) {
         //System.err.println("LastQ:"+FA[move].getValue(currState));
         
+        double[] phi_t = FA[move].computeFeatures(currState);
+        double[] phi_tp = null;
+        if ((!newState.isTerminal()) && (nextMove != -1)) {
+            phi_tp = FA[nextMove].computeFeatures(newState);
+        }
+        
         // Decay traces
         for (int a = 0; a < numActions; a++) {
             for (int j = 0; j < FA[a].getNumFunctions(); j++) {
@@ -128,15 +134,12 @@ public class SarsaLambda extends RLAgent{
         double epsilon_alpha = 0.0;
         double[] shrink = FA[move].getShrink();
         if ((!newState.isTerminal()) && (nextMove != -1)) {
-            double[] phi_tp = FA[nextMove].computeFeatures(newState);
-            double[] phi_t = FA[move].computeFeatures(currState);
             double[] nextShrink = FA[nextMove].getShrink();
             for (int k = 0; k < FA[move].getNumFunctions(); k++) {
                 epsilon_alpha += gamma * phi_tp[k] * (traces[nextMove][k]/nextShrink[k]) - phi_t[k] * (traces[move][k]/shrink[k]);
             }
         } else {
             // terminal state - calculate only from last move
-            double[] phi_t = FA[move].computeFeatures(currState);
             for (int k = 0; k < FA[move].getNumFunctions(); k++) {
                 epsilon_alpha += -1.0 * phi_t[k] * (traces[move][k]/shrink[k]);
             }
@@ -147,11 +150,11 @@ public class SarsaLambda extends RLAgent{
         }
         
         
-        // calculate temporal difference error
-        double delta = reward - FA[move].getValue(currState);
+        // Calculate temporal difference error
+        double delta = reward - FA[move].getValue(phi_t);
         // not end of episode -> update delta with next estimated value
         if ((!newState.isTerminal()) && (nextMove != -1)) {
-            delta += gamma * FA[nextMove].getValue(newState);
+            delta += gamma * FA[nextMove].getValue(phi_tp);
         }
 
         // Check for divergence
@@ -160,13 +163,12 @@ public class SarsaLambda extends RLAgent{
             System.exit(1);
         }
 
+        // Update weights
         for (int a = 0; a < numActions; a++) {
             double[] deltaW = new double[FA[a].getNumFunctions()];
             for (int i = 0; i < FA[a].getNumFunctions(); i++) {
                 deltaW[i] = alpha/FA[a].getShrink()[i] * delta * traces[a][i];
             }
-
-            // Update weights
             FA[a].updateWeights(deltaW);
         }
 

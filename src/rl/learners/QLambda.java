@@ -16,7 +16,7 @@ import rl.functionapproximation.LinearBasis;
  *
  * @author Craig
  */
-public class QLambda extends RLAgent{
+public class QLambda extends Learner{
     
     Random random;
     double[][] traces;

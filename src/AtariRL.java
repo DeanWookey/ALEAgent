@@ -1,6 +1,8 @@
 
 import agents.Agent;
 import agents.FourierAgent;
+import agents.AdaptiveWaveletAgent;
+import agents.FixedWaveletAgent;
 
 /*
  * Java Arcade Learning Environment (A.L.E) Agent
@@ -58,7 +60,6 @@ public class AtariRL {
 
         // Parse arguments
         int argIndex = 0;
-
         boolean doneParsing = (args.length == 0);
 
         // Loop through the list of arguments
@@ -105,7 +106,12 @@ public class AtariRL {
             }
         }
 
-        Agent ar = new FourierAgent(useGUI, gameName, namedPipesName);
+        // Select reinforcement learning agent:
+        //Agent ar = new FourierAgent(useGUI, gameName, namedPipesName);
+        Agent ar = new FixedWaveletAgent(useGUI, gameName, namedPipesName);
+        //Agent ar = new AdaptiveWaveletAgent(useGUI, gameName, namedPipesName);
+        
+        // Set parameters
         if (trainingFrames >= 0) {
             ar.setTrainingFrames(trainingFrames);
         }

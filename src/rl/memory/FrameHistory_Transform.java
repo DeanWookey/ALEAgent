@@ -1,40 +1,18 @@
 /*
- * Java Arcade Learning Environment (A.L.E) Agent
- *  Copyright (C) 2011-2012 Marc G. Bellemare <mgbellemare@ualberta.ca>
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
  */
 package rl.memory;
 
-import ale.screen.ScreenMatrix;
-import image.FourierTransform;
-import image.Utils;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import rl.domain.State;
-import rl.functionapproximation.FourierMultiframeBasis;
 
 /**
- * A time-ordered list of frames.
  *
- * @author Marc G. Bellemare
+ * @author Craig Bester
  */
-public class FrameHistory_Fourier {
-
+public class FrameHistory_Transform {
     /**
      * The list of recent frames
      */
@@ -46,7 +24,7 @@ public class FrameHistory_Fourier {
      */
     protected int maxLength;
     
-    private FourierTransform FT;
+    private Transform transform;
 
     /**
      * Create a new FrameHistory which needs to keep no more than the last
@@ -54,9 +32,9 @@ public class FrameHistory_Fourier {
      *
      * @param stateLength
      */
-    public FrameHistory_Fourier(int stateLength, FourierTransform ft) {
+    public FrameHistory_Transform(int stateLength, Transform transform) {
         this.maxLength = stateLength;
-        this.FT = ft;
+        this.transform = transform;
         frames = new LinkedList<>();
     }
 
@@ -66,7 +44,7 @@ public class FrameHistory_Fourier {
      * @param frame
      */
     public void addFrame(Frame frame) {
-        frames.addLast(FT.transform(frame));
+        frames.addLast(transform.transform(frame));
         while (frames.size() > maxLength) {
             frames.removeFirst();
         }
@@ -103,5 +81,4 @@ public class FrameHistory_Fourier {
         }
         return (new State(ret));
     }
-    
 }

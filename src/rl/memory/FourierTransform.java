@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package image;
+package rl.memory;
 
 import rl.memory.Frame;
 
@@ -11,11 +11,10 @@ import rl.memory.Frame;
  *
  * @author Craig Bester
  */
-public class FourierTransform {
+public class FourierTransform extends Transform{
 
     // Static to save memory
     //  So don't use several bases with different parameters or everything dies
-
     static double[][] cosine;
     static int[][] coefficients; //same for every frame
 
@@ -60,13 +59,20 @@ public class FourierTransform {
                 // have to reset old value when overwriting
                 int index = yco * xco + xco;
                 phi[index] = 0;
-
+                double euclidNormSquared = 0;
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
                         // x,y already scaled in cosine pre-calculation
                         phi[index] += img[y][x] * cosine[yco * y][xco * x];
+                        euclidNormSquared += cosine[yco* y][xco * x]*cosine[yco* y][xco * x];
                     }
                 }
+
+                // Divide by norm for numerical stability in gradient descent?
+                // Normalisation is actually standard (is it shrink?), 
+                //  it's just that in orthonormal bases the integral amount to 1
+                //  , so it makes no difference
+                if(euclidNormSquared>0) phi[index]/=euclidNormSquared;
             }
         }
 

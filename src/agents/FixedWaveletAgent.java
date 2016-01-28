@@ -8,49 +8,67 @@ package agents;
 import ale.io.Actions;
 import ale.io.RLData;
 import ale.screen.ScreenMatrix;
+import rl.memory.DaubTransform;
 import rl.memory.FourierTransform;
+import rl.memory.HaarTransform;
 import image.Utils;
 import java.awt.image.BufferedImage;
 import rl.domain.State;
+import rl.functionapproximation.BSplineBasis;
 import rl.functionapproximation.Basis;
+import rl.functionapproximation.DaubBasis;
 import rl.functionapproximation.FourierMultiframeBasis;
+import rl.functionapproximation.HaarBasis;
+import rl.functionapproximation.HaarBasis;
+import rl.functionapproximation.WaveletTensorBasis;
 import rl.learners.Learner;
+import rl.learners.QLambda;
 import rl.learners.QReplay;
 import rl.learners.SarsaLambda;
+import rl.memory.BSplineTransform;
 import rl.memory.Frame;
+import rl.memory.FrameHistory;
 import rl.memory.FrameHistory_Transform;
 
 /**
  *
  * @author Craig Bester
  */
-public class FourierAgent extends Agent {
-
+public class FixedWaveletAgent extends Agent {
     //FrameHistory history;
-
-    Learner learner;
     FrameHistory_Transform history;
+    Learner learner;
 
     final int imageSize = 84;
     final int framesPerState = 4;
     final int numDimensions = framesPerState*imageSize*imageSize;
 
-    final int order = 83;
-    double alpha = 1;
+    // Function approximator parameters
+    
+    // Haar
+    //final int baseScale = 2; final int maxScale = 4; final boolean normalise = false;
+    // Daub
+    //final int baseScale = 2; final int maxScale = -1; final int order = 4; final boolean normalise = false;
+    // BSpline
+    final int baseScale = 2; final int maxScale = -1; final int order = 2; final boolean normalise = false;
+    
+    
     //double alpha = 0.014 / (int) Math.pow(order + 1, 2); // should be #frames*#basis_functions?
     //double alpha = 0.014 / (imageSize * imageSize);
     //double alpha = 0.00025; // DeepMind
-    double gamma = 0.99; //Sarsa
+    double gamma = 0.99; double alpha = 1; //Sarsa
+    //double gamma = 0.95; double alpha = 1; //Sarsa
     //double gamma = 0.95; //Q-learning
-    double lambda = 0.95;
+    //double lambda = 0.99; 
+    double lambda = 0.95; 
     double epsilonStart = 1.0;
-    double epsilonEnd = 0.05;
+    double epsilonEnd = 0.10;
     double epsilonEvaluation = 0.05;
 
-    public FourierAgent(boolean gui, String game, String pipesBasename) {
+    public FixedWaveletAgent(boolean gui, String game, String pipesBasename) {
         super(gui, game, pipesBasename);
         
-        System.err.println("Fixed Fourier basis" + ", gamma " + gamma +  ", lambda " + lambda);
+        System.err.println("Fixed wavelet basis" + ", gamma " + gamma +  ", lambda " + lambda);
         System.err.println("Dimensions: " + numDimensions);
         System.err.println("Actions: " + numActions);
         
@@ -60,22 +78,23 @@ public class FourierAgent extends Agent {
     @Override
     public final void initLearner() {
         //history = new FrameHistory(framesPerState);
-        history = new FrameHistory_Transform(framesPerState, new FourierTransform(imageSize, imageSize, order));
-
+        //history = new FrameHistory_Transform(framesPerState, new HaarTransform(imageSize, imageSize, baseScale,maxScale));
+        //history = new FrameHistory_Transform(framesPerState, new DaubTransform(imageSize, imageSize, baseScale,maxScale,order));
+        history = new FrameHistory_Transform(framesPerState, new BSplineTransform(imageSize, imageSize, baseScale,maxScale,order));
+        
         Basis[] functionApproximators = new Basis[numActions];
 
         //Basis test = new FourierMultiframeBasis(framesPerState,imageSize,imageSize,order);
         int numTerms = 0;
         for (int i = 0; i < actionSet.numActions; i++) {
-            //functionApproximators[i] = new LinearBasis(test.getNumFunctions());
-            //functionApproximators[i].setShrink(test.getShrink());
-
-            //functionApproximators[i] = new LinearBasis(numFrames * imageSize * imageSize);
-            functionApproximators[i] = new FourierMultiframeBasis(framesPerState, imageSize, imageSize, order);
-
+            //functionApproximators[i] = new HaarFullCrossTilingBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, normalise);
+            //functionApproximators[i] = new DaubBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, order, normalise);
+            //functionApproximators[i] = new WaveletTensorBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, order, normalise);
+            functionApproximators[i] = new BSplineBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, order, normalise);
+            
             // Random weight initialisation - DeepMind (bounds used unclear)
-            functionApproximators[i].randomiseWeights();
-            // Randomised weights sometimes causes learning divergence
+            //functionApproximators[i].randomiseWeights();
+            // Randomised weights sometimes causes divergence with experience replay
             
             numTerms += functionApproximators[i].getNumFunctions();
         }
@@ -83,8 +102,8 @@ public class FourierAgent extends Agent {
         System.err.println("Terms per action = " + functionApproximators[0].getNumFunctions());
         System.err.println("Total number of terms = " + numTerms);
 
-        learner = new SarsaLambda(numActions, functionApproximators[0].getNumFunctions(), functionApproximators);
-        //learner = new QLambda(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);
+        //learner = new SarsaLambda(numActions, functionApproximators[0].getNumFunctions(), functionApproximators);
+        learner = new QLambda(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);
         //learner = new QLearner(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);
         //learner = new QReplay(actionSet.numActions, functionApproximators[0].getNumFunctions(), functionApproximators);
         //learner = new QTarget(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);

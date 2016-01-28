@@ -12,7 +12,7 @@ import rl.domain.State;
  *
  * @author Craig Bester
  */
-public abstract class RLAgent {
+public abstract class Learner {
     double alpha;
     double gamma;
     double lambda;
@@ -31,13 +31,13 @@ public abstract class RLAgent {
     public abstract int agent_step(double reward, State s);
     public abstract void agent_end(double reward);
     
-    public RLAgent(int numActions, int numFeatures) {
+    public Learner(int numActions, int numFeatures) {
         this.stepNumber = 0;
         this.numActions = numActions;
         this.numFeatures = numFeatures;
     }
     
-    public RLAgent(int numActions, int numFeatures, Basis[] functionApproximators) {
+    public Learner(int numActions, int numFeatures, Basis[] functionApproximators) {
         this.stepNumber = 0;
         this.numActions = numActions;
         this.numFeatures = numFeatures;

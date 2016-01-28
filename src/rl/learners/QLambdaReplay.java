@@ -19,7 +19,7 @@ import rl.memory.Sample;
  *
  * @author Craig
  */
-public class QLambdaReplay extends RLAgent{
+public class QLambdaReplay extends Learner{
     
     Random random;
     Memory memory;

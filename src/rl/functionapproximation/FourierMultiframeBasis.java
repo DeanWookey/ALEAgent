@@ -41,7 +41,7 @@ public class FourierMultiframeBasis extends Basis {
         
         computeFourierCoefficients();
         precalculateCosine();
-        initialiseShrink();
+        //initialiseShrink();
     }
 
     public FourierMultiframeBasis(int i) {
@@ -74,7 +74,7 @@ public class FourierMultiframeBasis extends Basis {
 
     @Override
     public double getValue(State s) {
-        phi = computeFeatures(s);
+        double[] phi = computeFeatures(s);
         double Q = 0;
         for(int i = 0; i < numFeatures; i++) {
             Q += weights[i]*phi[i];
@@ -83,7 +83,6 @@ public class FourierMultiframeBasis extends Basis {
         return Q;
     }
 
-    double[] phi;
     @Override
     public double[] computeFeatures(State s) {
         // avoid extra memory
@@ -170,10 +169,10 @@ public class FourierMultiframeBasis extends Basis {
         }
     }
     
-    @Override
+    /*@Override
     public double[] getShrink() {
         return shrink;
-    }
+    }*/
     
     private void initialiseShrink() {
         shrink = new double[numFeatures];

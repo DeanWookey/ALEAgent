@@ -7,7 +7,7 @@ import rl.domain.State;
  *
  * @author Craig Bester
  */
-public class RandomAgent extends RLAgent{
+public class RandomAgent extends Learner{
     protected Random random;
 
     public RandomAgent(int numActions) {

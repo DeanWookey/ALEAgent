@@ -170,12 +170,12 @@ public class Utils {
 
         //DeepMind used some form of bilinear interpolation
         Graphics2D g = scaledImage.createGraphics();
-        /*
+        
         g.setRenderingHint(
          RenderingHints.KEY_INTERPOLATION,
          RenderingHints.VALUE_INTERPOLATION_BILINEAR
          );
-        */
+        
         g.drawImage(img, 0, 0, width, height, null);
         g.dispose();
 

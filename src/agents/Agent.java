@@ -16,7 +16,7 @@ import ale.screen.ScreenConverter;
 import ale.screen.ScreenMatrix;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import rl.learners.RLAgent;
+import rl.learners.Learner;
 
 /**
  *
@@ -24,7 +24,7 @@ import rl.learners.RLAgent;
  */
 public abstract class Agent {
     ALEPipes io;
-    RLAgent learner;
+    //Learner learner;
     ActionSet actionSet;
     AbstractUI ui;
     ScreenConverter converter;
@@ -39,6 +39,7 @@ public abstract class Agent {
     double episodeReward;
     int learnerAction;
     int episodeNumber;
+    int numActions;
     int numFrames;
     int numTrainingEpisodes;
     
@@ -58,7 +59,7 @@ public abstract class Agent {
         episodeNumber = 1;
         numTrainingEpisodes = 1;
         numFrames = 0;
-
+        
         useGUI = gui;
         gameName = game;
         if (gameName == null) {
@@ -67,6 +68,8 @@ public abstract class Agent {
         actionSet = new ActionSet(gameName);
         converter = new ScreenConverter(new NTSCPalette());
 
+        numActions = actionSet.numActions;
+        
         init();
     }
     

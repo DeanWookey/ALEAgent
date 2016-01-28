@@ -18,7 +18,7 @@ import rl.memory.Sample;
  *
  * @author Craig
  */
-public class QReplay extends RLAgent{
+public class QReplay extends Learner{
     
     Random random;
     Memory memory;

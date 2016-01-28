@@ -15,7 +15,7 @@ import rl.functionapproximation.LinearBasis;
  *
  * @author Craig
  */
-public class QTarget extends RLAgent{
+public class QTarget extends Learner{
     
     Random random;
     Basis[] targetQ;

@@ -17,7 +17,7 @@ import rl.memory.Sample;
  *
  * @author Craig
  */
-public class QTargetReplay extends RLAgent {
+public class QTargetReplay extends Learner {
 
     Random random;
     Basis[] targetQ;
