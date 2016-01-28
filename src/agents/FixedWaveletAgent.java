@@ -41,7 +41,7 @@ public class FixedWaveletAgent extends Agent {
 
     final int imageSize = 84;
     final int framesPerState = 4;
-    final int numDimensions = framesPerState*imageSize*imageSize;
+    final int numPixels = framesPerState*imageSize*imageSize;
 
     // Function approximator parameters
     
@@ -69,7 +69,7 @@ public class FixedWaveletAgent extends Agent {
         super(gui, game, pipesBasename);
         
         System.err.println("Fixed wavelet basis" + ", gamma " + gamma +  ", lambda " + lambda);
-        System.err.println("Dimensions: " + numDimensions);
+        System.err.println("Pixels: " + numPixels);
         System.err.println("Actions: " + numActions);
         
         initLearner();
@@ -199,7 +199,7 @@ public class FixedWaveletAgent extends Agent {
         Utils.grayscale(mat);
 
         // Scale down to 84x84
-        BufferedImage bi = Utils.scale(Utils.matrixToImage(mat), 84, 84);
+        BufferedImage bi = Utils.scale(Utils.matrixToImage(mat), imageSize, imageSize);
         //double[][] img = Utils.imageToDoubleMatrix(bi);
 
         // Cosine transform
