@@ -53,6 +53,7 @@ public class FixedWaveletAgent extends Agent {
     final int baseScale = 2; final int maxScale = -1; final int order = 2; final boolean normalise = false;
     
     
+    boolean clipReward = true;
     //double alpha = 0.014 / (int) Math.pow(order + 1, 2); // should be #frames*#basis_functions?
     //double alpha = 0.014 / (imageSize * imageSize);
     //double alpha = 0.00025; // DeepMind
@@ -134,7 +135,8 @@ public class FixedWaveletAgent extends Agent {
             double reward = rlData.reward;
 
             //restrict reward to -1,0,1
-            reward = clippedReward(reward);
+            if(clipReward)
+                reward = clippedReward(reward);
             // Regular RL step
             if (!terminal) // we don't immediately receive the new screen, so the agent has to rely on its previous data
             {
