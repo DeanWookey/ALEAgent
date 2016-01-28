@@ -17,6 +17,7 @@ import rl.domain.State;
 import rl.functionapproximation.BSplineBasis;
 import rl.functionapproximation.Basis;
 import rl.functionapproximation.DaubBasis;
+import rl.functionapproximation.DaubFullBasis;
 import rl.functionapproximation.FourierMultiframeBasis;
 import rl.functionapproximation.HaarBasis;
 import rl.functionapproximation.HaarBasis;
@@ -26,6 +27,7 @@ import rl.learners.QLambda;
 import rl.learners.QReplay;
 import rl.learners.SarsaLambda;
 import rl.memory.BSplineTransform;
+import rl.memory.DaubFullTransform;
 import rl.memory.Frame;
 import rl.memory.FrameHistory;
 import rl.memory.FrameHistory_Transform;
@@ -49,8 +51,10 @@ public class FixedWaveletAgent extends Agent {
     //final int baseScale = 2; final int maxScale = 4; final boolean normalise = false;
     // Daub
     //final int baseScale = 2; final int maxScale = -1; final int order = 4; final boolean normalise = false;
+    // Daub Multiresolution
+    final int baseScale = 2; final int maxScale = 3; final int order = 4; final boolean normalise = false;
     // BSpline
-    final int baseScale = 2; final int maxScale = -1; final int order = 2; final boolean normalise = false;
+    //final int baseScale = 2; final int maxScale = -1; final int order = 2; final boolean normalise = false;
     
     
     boolean clipReward = true;
@@ -81,7 +85,8 @@ public class FixedWaveletAgent extends Agent {
         //history = new FrameHistory(framesPerState);
         //history = new FrameHistory_Transform(framesPerState, new HaarTransform(imageSize, imageSize, baseScale,maxScale));
         //history = new FrameHistory_Transform(framesPerState, new DaubTransform(imageSize, imageSize, baseScale,maxScale,order));
-        history = new FrameHistory_Transform(framesPerState, new BSplineTransform(imageSize, imageSize, baseScale,maxScale,order));
+        //history = new FrameHistory_Transform(framesPerState, new BSplineTransform(imageSize, imageSize, baseScale,maxScale,order));
+        history = new FrameHistory_Transform(framesPerState, new DaubFullTransform(imageSize, imageSize, baseScale,maxScale,order));
         
         Basis[] functionApproximators = new Basis[numActions];
 
@@ -91,7 +96,8 @@ public class FixedWaveletAgent extends Agent {
             //functionApproximators[i] = new HaarFullCrossTilingBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, normalise);
             //functionApproximators[i] = new DaubBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, order, normalise);
             //functionApproximators[i] = new WaveletTensorBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, order, normalise);
-            functionApproximators[i] = new BSplineBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, order, normalise);
+            //functionApproximators[i] = new BSplineBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, order, normalise);
+            functionApproximators[i] = new DaubFullBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, order, normalise);
             
             // Random weight initialisation - DeepMind (bounds used unclear)
             //functionApproximators[i].randomiseWeights();
@@ -103,8 +109,8 @@ public class FixedWaveletAgent extends Agent {
         System.err.println("Terms per action = " + functionApproximators[0].getNumFunctions());
         System.err.println("Total number of terms = " + numTerms);
 
-        //learner = new SarsaLambda(numActions, functionApproximators[0].getNumFunctions(), functionApproximators);
-        learner = new QLambda(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);
+        learner = new SarsaLambda(numActions, functionApproximators[0].getNumFunctions(), functionApproximators);
+        //learner = new QLambda(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);
         //learner = new QLearner(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);
         //learner = new QReplay(actionSet.numActions, functionApproximators[0].getNumFunctions(), functionApproximators);
         //learner = new QTarget(actionSet.numActions,functionApproximators[0].getNumFunctions(),functionApproximators);

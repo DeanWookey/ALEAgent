@@ -1,10 +1,9 @@
 package rl.functionapproximation;
 
 import rl.domain.State;
-import static rl.functionapproximation.HaarBasis.calculateNumTerms;
 
 /**
- * A full tiling of haar wavelets and scaling functions up to some order
+ * A full tiling of daub wavelets and scaling functions up to some order
  * @author Dean
  */
 public class DaubBasis extends Basis {
