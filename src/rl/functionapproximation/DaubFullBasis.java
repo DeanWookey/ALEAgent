@@ -12,7 +12,7 @@ import rl.domain.State;
  *
  * @author Craig Bester
  */
-public class DaubFullBasis extends Basis {
+public class DaubFullBasis extends TransformBasis {
 
     final int maxScale;
     final int baseScale;
@@ -27,9 +27,9 @@ public class DaubFullBasis extends Basis {
     boolean normalise;
 
     private static BasisFunction[] terms;
-    private static double[][][] waveletCache;
 
     public DaubFullBasis(int numFrames, int height, int width, int baseScale, int maxScale, int order, boolean normalise) {
+        super(numFrames, width, height);
         this.order = order;
         this.dimensions = 2;
         this.numFunctionsPerFrame = calculateNumTerms(baseScale, maxScale, dimensions, order);
@@ -44,7 +44,6 @@ public class DaubFullBasis extends Basis {
         this.maxScale = maxScale;
         this.baseScale = baseScale;
         initialiseTerms();
-        initialiseCache();
     }
 
     public int getNumShifts(int scale) {
@@ -141,16 +140,10 @@ public class DaubFullBasis extends Basis {
                 }
             }
 
-            /*
-             System.err.println(pos);
-             System.err.println(terms.length);
-             for (int i = 0; i < terms.length; i++) {
-             System.err.println(terms[i].getBasisString());
-             }
-             */
         }
     }
 
+    /*
     private void initialiseCache() {
         if (waveletCache == null) {
             waveletCache = new double[numFeatures][height][width];
@@ -169,23 +162,18 @@ public class DaubFullBasis extends Basis {
                 }
             }
         }
-        /*
-         System.out.println(pos);
-         System.out.println(terms.length);
-         for (int i = 0; i < terms.length; i++) {
-         System.out.println(terms[i].getBasisString());
-         }
-         * 
-         */
     }
+    */
 
+    /*
     @Override
     public void updateWeights(double[] deltaW) {
         for (int i = 0; i < numFeatures; i++) {
             weights[i] += deltaW[i];
         }
     }
-
+    */
+/*
     @Override
     public double getValue(State s) {
         double[] phi = computeFeatures(s);
@@ -202,7 +190,9 @@ public class DaubFullBasis extends Basis {
         }
         return Q;
     }
+    */
 
+    /*
     @Override
     public double getValue(double[] phi) {
         double Q = 0;
@@ -218,7 +208,9 @@ public class DaubFullBasis extends Basis {
         }
         return Q;
     }
+    */
 
+    /*
     @Override
     public double[] computeFeatures(State s) {
         // avoid extra memory
@@ -248,5 +240,16 @@ public class DaubFullBasis extends Basis {
         }
 
         return phi;
+    }
+    */
+
+    @Override
+    public BasisFunction[] getBasisFunctions() {
+        return terms;
+    }
+
+    @Override
+    public int getNumFeatures() {
+        return terms.length;
     }
 }

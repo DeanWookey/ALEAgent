@@ -167,7 +167,7 @@ public class SarsaLambda extends Learner{
         for (int a = 0; a < numActions; a++) {
             double[] deltaW = new double[FA[a].getNumFunctions()];
             for (int i = 0; i < FA[a].getNumFunctions(); i++) {
-                deltaW[i] = alpha/FA[a].getShrink()[i] * delta * traces[a][i];
+                deltaW[i] = (alpha/FA[a].getShrink()[i]) * delta * traces[a][i];
             }
             FA[a].updateWeights(deltaW);
         }

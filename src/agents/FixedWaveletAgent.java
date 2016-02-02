@@ -19,8 +19,11 @@ import rl.functionapproximation.Basis;
 import rl.functionapproximation.DaubBasis;
 import rl.functionapproximation.DaubFullBasis;
 import rl.functionapproximation.FourierMultiframeBasis;
+import rl.functionapproximation.FullFourierBasis;
 import rl.functionapproximation.HaarBasis;
 import rl.functionapproximation.HaarBasis;
+import rl.functionapproximation.IndicatorBasis;
+import rl.functionapproximation.TransformBasis;
 import rl.functionapproximation.WaveletTensorBasis;
 import rl.learners.Learner;
 import rl.learners.QLambda;
@@ -31,6 +34,7 @@ import rl.memory.DaubFullTransform;
 import rl.memory.Frame;
 import rl.memory.FrameHistory;
 import rl.memory.FrameHistory_Transform;
+import rl.memory.FrameHistory_Transform2;
 
 /**
  *
@@ -38,7 +42,7 @@ import rl.memory.FrameHistory_Transform;
  */
 public class FixedWaveletAgent extends Agent {
     //FrameHistory history;
-    FrameHistory_Transform history;
+    FrameHistory_Transform2 history;
     Learner learner;
 
     final int imageSize = 84;
@@ -61,14 +65,15 @@ public class FixedWaveletAgent extends Agent {
     //double alpha = 0.014 / (int) Math.pow(order + 1, 2); // should be #frames*#basis_functions?
     //double alpha = 0.014 / (imageSize * imageSize);
     //double alpha = 0.00025; // DeepMind
-    double gamma = 0.99; double alpha = 1; //Sarsa
+    double gamma = 0.95; double alpha = 1; //Sarsa
     //double gamma = 0.95; double alpha = 1; //Sarsa
     //double gamma = 0.95; //Q-learning
     //double lambda = 0.99; 
     double lambda = 0.95; 
-    double epsilonStart = 1.0;
-    double epsilonEnd = 0.10;
-    double epsilonEvaluation = 0.05;
+    double epsilonStart = 0.05;
+    double epsilonEnd = 0.05;
+    double epsilonEvaluation = 0.01;
+    private TransformBasis transformBasis;
 
     public FixedWaveletAgent(boolean gui, String game, String pipesBasename) {
         super(gui, game, pipesBasename);
@@ -86,8 +91,12 @@ public class FixedWaveletAgent extends Agent {
         //history = new FrameHistory_Transform(framesPerState, new HaarTransform(imageSize, imageSize, baseScale,maxScale));
         //history = new FrameHistory_Transform(framesPerState, new DaubTransform(imageSize, imageSize, baseScale,maxScale,order));
         //history = new FrameHistory_Transform(framesPerState, new BSplineTransform(imageSize, imageSize, baseScale,maxScale,order));
-        history = new FrameHistory_Transform(framesPerState, new DaubFullTransform(imageSize, imageSize, baseScale,maxScale,order));
-        
+        //history = new FrameHistory_Transform(framesPerState, new DaubFullTransform(imageSize, imageSize, baseScale,maxScale,order));
+        //transforms 1 frame to another basis
+        transformBasis = new DaubFullBasis(1, imageSize, imageSize, baseScale, maxScale, order, normalise);
+        //transformBasis = new IndicatorBasis(1, imageSize, imageSize);
+        //transformBasis = new FullFourierBasis(1, imageSize, imageSize, 10);
+        history = new FrameHistory_Transform2(framesPerState, transformBasis);
         Basis[] functionApproximators = new Basis[numActions];
 
         //Basis test = new FourierMultiframeBasis(framesPerState,imageSize,imageSize,order);
@@ -97,8 +106,8 @@ public class FixedWaveletAgent extends Agent {
             //functionApproximators[i] = new DaubBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, order, normalise);
             //functionApproximators[i] = new WaveletTensorBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, order, normalise);
             //functionApproximators[i] = new BSplineBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, order, normalise);
-            functionApproximators[i] = new DaubFullBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, order, normalise);
-            
+            //functionApproximators[i] = new DaubFullBasis(framesPerState, imageSize, imageSize, baseScale, maxScale, order, normalise);
+            functionApproximators[i] = new IndicatorBasis(framesPerState, imageSize, imageSize, transformBasis.getNumFeatures()*framesPerState);
             // Random weight initialisation - DeepMind (bounds used unclear)
             //functionApproximators[i].randomiseWeights();
             // Randomised weights sometimes causes divergence with experience replay

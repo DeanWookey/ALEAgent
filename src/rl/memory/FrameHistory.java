@@ -111,6 +111,25 @@ public class FrameHistory implements Cloneable {
 
     
     public State getState() {
+        
+                double[] img = frames.getFirst().toArray();
+        int length = img.length;
+        double[] ret = new double[maxLength * length];
+        int j = 0;
+        
+        // Duplicate first frame until we have enough frames for a single state
+        if (frames.size() < maxLength) {
+            int repeat = maxLength-frames.size();
+            for(;j<repeat;j++) {
+                System.arraycopy(img, 0, ret, j * length, length);
+            }
+        }
+        for (Frame f : frames) {
+            System.arraycopy(f.toArray(), 0, ret, j * length, length);
+            j++;
+        }
+        return (new State(ret));
+        /*
         double[][] img = frames.getFirst().image;
         int height = img.length;
         int width = img[0].length;
@@ -133,6 +152,7 @@ public class FrameHistory implements Cloneable {
             j++;
         }
         return (new State(ret));
+        */
     }
 
     /*

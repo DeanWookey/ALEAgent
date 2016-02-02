@@ -108,8 +108,8 @@ public class AtariRL {
 
         // Select reinforcement learning agent:
         //Agent ar = new FourierAgent(useGUI, gameName, namedPipesName);
-        Agent ar = new FixedWaveletAgent(useGUI, gameName, namedPipesName);
-        //Agent ar = new AdaptiveWaveletAgent(useGUI, gameName, namedPipesName);
+        //Agent ar = new FixedWaveletAgent(useGUI, gameName, namedPipesName);
+        Agent ar = new AdaptiveWaveletAgent(useGUI, gameName, namedPipesName);
         
         // Set parameters
         if (trainingFrames >= 0) {

@@ -11,6 +11,8 @@ import ale.screen.ScreenMatrix;
 import image.Utils;
 import java.awt.image.BufferedImage;
 import rl.domain.State;
+import rl.functionapproximation.DaubFullBasis;
+import rl.functionapproximation.FullFourierBasis;
 import rl.functionapproximation.adaptive_wavelets.ATCext;
 import rl.functionapproximation.adaptive_wavelets.AdaptiveBasis;
 import rl.functionapproximation.adaptive_wavelets.FunctionApproximator;
@@ -23,6 +25,7 @@ import rl.functionapproximation.adaptive_wavelets.Sample;
 import rl.functionapproximation.adaptive_wavelets.SarsaLambdaAlphaScale;
 import rl.memory.Frame;
 import rl.memory.FrameHistory;
+import rl.memory.FrameHistory_Transform2;
 
 /**
  *
@@ -32,15 +35,15 @@ public class AdaptiveWaveletAgent extends Agent {
 
     QApproximator q;
     SarsaLambdaAlphaScale learner;
-    FrameHistory history;
+    FrameHistory_Transform2 history;
 
     final int imageSize = 28;
-    final int framesPerState = 1;
-    final int numDimensions = framesPerState * imageSize * imageSize;
+    final int framesPerState = 4;
 
-    double epsilonStart = 1.0;
-    double epsilonEnd = 0.1;
-    double epsilonEvaluation = 0.05;
+
+    double epsilonStart = 0.05;
+    double epsilonEnd = 0.05;
+    double epsilonEvaluation = 0.01;
 
     //Parameters
     int numExperiments = 1;
@@ -48,9 +51,9 @@ public class AdaptiveWaveletAgent extends Agent {
     int totalEpisodes = 20;
     
     double alpha = 1;
-    double gamma = 0.99;
-    double lambda = 0.9;
-    double epsilon = 0.05;
+    double gamma = 0.95;
+    double lambda = 0.95;
+    double epsilon = 0.01;
 
     // --------Play with these parameters--------------------------------
     double combineTol = 0.2; // below this it will combine two functions
@@ -88,6 +91,8 @@ public class AdaptiveWaveletAgent extends Agent {
     State lastState;
     
     int experimentNumber = 0;
+    private FullFourierBasis transformBasis;
+    private int numDimensions;
 
     public AdaptiveWaveletAgent(boolean gui, String game, String pipesBasename) {
         super(gui, game, pipesBasename);
@@ -142,17 +147,20 @@ public class AdaptiveWaveletAgent extends Agent {
         if (split) {
             System.err.println("splitting tolerance " + splitTol);
         }
+                initLearner();
         System.err.println("Dimensions: " + numDimensions);
         System.err.println("Actions: " + actionSet.numActions);
         
         // Setup learner
-        initLearner();
+
     }
 
     @Override
     public final void initLearner() {
-        history = new FrameHistory(framesPerState);
-        
+
+        transformBasis = new FullFourierBasis(1, imageSize, imageSize, 10);
+        history = new FrameHistory_Transform2(framesPerState, transformBasis);
+        numDimensions = framesPerState * transformBasis.getNumFeatures();
         // Initialise function approximators
         int numActions = actionSet.numActions;
         FunctionApproximator FAs[] = new FunctionApproximator[numActions];

@@ -1,18 +1,15 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package rl.memory;
 
 import java.util.LinkedList;
 import rl.domain.State;
+import rl.functionapproximation.TransformBasis;
 
 /**
  *
  * @author Craig Bester
  */
-public class FrameHistory_Transform {
+public class FrameHistory_Transform2 {
     /**
      * The list of recent frames
      */
@@ -24,7 +21,7 @@ public class FrameHistory_Transform {
      */
     protected int maxLength;
     
-    private Transform transform;
+    private final TransformBasis transform;
 
     /**
      * Create a new FrameHistory which needs to keep no more than the last
@@ -32,9 +29,9 @@ public class FrameHistory_Transform {
      *
      * @param stateLength
      */
-    public FrameHistory_Transform(int stateLength, Transform transform) {
+    public FrameHistory_Transform2(int stateLength, TransformBasis basis) {
         this.maxLength = stateLength;
-        this.transform = transform;
+        this.transform = basis;
         frames = new LinkedList<>();
     }
 
@@ -44,7 +41,7 @@ public class FrameHistory_Transform {
      * @param frame
      */
     public void addFrame(Frame frame) {
-        frames.addLast(transform.transform(frame));
+        frames.addLast(transform.computeFeatures(new State(frame.toArray())));
         while (frames.size() > maxLength) {
             frames.removeFirst();
         }
@@ -66,7 +63,6 @@ public class FrameHistory_Transform {
         double[] img = frames.getFirst();
         int length = img.length;
         double[] ret = new double[maxLength * length];
-
         int j = 0;
         
         // Duplicate first frame until we have enough frames for a single state
