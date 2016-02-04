@@ -24,6 +24,7 @@ import rl.functionapproximation.HaarBasis;
 import rl.functionapproximation.HaarBasis;
 import rl.functionapproximation.IndicatorBasis;
 import rl.functionapproximation.TransformBasis;
+import rl.functionapproximation.Transformation2D;
 import rl.functionapproximation.WaveletTensorBasis;
 import rl.learners.Learner;
 import rl.learners.QLambda;
@@ -34,7 +35,7 @@ import rl.memory.DaubFullTransform;
 import rl.memory.Frame;
 import rl.memory.FrameHistory;
 import rl.memory.FrameHistory_Transform;
-import rl.memory.FrameHistory_Transform2;
+import rl.memory.StateManager;
 
 /**
  *
@@ -42,7 +43,7 @@ import rl.memory.FrameHistory_Transform2;
  */
 public class FixedWaveletAgent extends Agent {
     //FrameHistory history;
-    FrameHistory_Transform2 history;
+    StateManager history;
     Learner learner;
 
     final int imageSize = 84;
@@ -85,7 +86,6 @@ public class FixedWaveletAgent extends Agent {
         initLearner();
     }
 
-    @Override
     public final void initLearner() {
         //history = new FrameHistory(framesPerState);
         //history = new FrameHistory_Transform(framesPerState, new HaarTransform(imageSize, imageSize, baseScale,maxScale));
@@ -96,7 +96,7 @@ public class FixedWaveletAgent extends Agent {
         transformBasis = new DaubFullBasis(1, imageSize, imageSize, baseScale, maxScale, order, normalise);
         //transformBasis = new IndicatorBasis(1, imageSize, imageSize);
         //transformBasis = new FullFourierBasis(1, imageSize, imageSize, 10);
-        history = new FrameHistory_Transform2(framesPerState, transformBasis);
+        history = new StateManager(framesPerState, new Transformation2D(imageSize, imageSize, transformBasis.getBasisFunctions()));
         Basis[] functionApproximators = new Basis[numActions];
 
         //Basis test = new FourierMultiframeBasis(framesPerState,imageSize,imageSize,order);

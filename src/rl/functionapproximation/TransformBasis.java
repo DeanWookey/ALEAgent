@@ -4,7 +4,7 @@ import rl.domain.State;
 
 /**
  *
- * @author itchallengeuser
+ * @author Dean
  */
 public abstract class TransformBasis extends Basis {
 

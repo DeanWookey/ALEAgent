@@ -13,6 +13,7 @@ import java.awt.image.BufferedImage;
 import rl.domain.State;
 import rl.functionapproximation.DaubFullBasis;
 import rl.functionapproximation.FullFourierBasis;
+import rl.functionapproximation.Transformation2D;
 import rl.functionapproximation.adaptive_wavelets.ATCext;
 import rl.functionapproximation.adaptive_wavelets.AdaptiveBasis;
 import rl.functionapproximation.adaptive_wavelets.FunctionApproximator;
@@ -25,7 +26,7 @@ import rl.functionapproximation.adaptive_wavelets.Sample;
 import rl.functionapproximation.adaptive_wavelets.SarsaLambdaAlphaScale;
 import rl.memory.Frame;
 import rl.memory.FrameHistory;
-import rl.memory.FrameHistory_Transform2;
+import rl.memory.StateManager;
 
 /**
  *
@@ -35,7 +36,7 @@ public class AdaptiveWaveletAgent extends Agent {
 
     QApproximator q;
     SarsaLambdaAlphaScale learner;
-    FrameHistory_Transform2 history;
+    StateManager history;
 
     final int imageSize = 28;
     final int framesPerState = 4;
@@ -155,11 +156,10 @@ public class AdaptiveWaveletAgent extends Agent {
 
     }
 
-    @Override
     public final void initLearner() {
 
         transformBasis = new FullFourierBasis(1, imageSize, imageSize, 10);
-        history = new FrameHistory_Transform2(framesPerState, transformBasis);
+        history = new StateManager(framesPerState, new Transformation2D(imageSize, imageSize, transformBasis.getBasisFunctions()));
         numDimensions = framesPerState * transformBasis.getNumFeatures();
         // Initialise function approximators
         int numActions = actionSet.numActions;

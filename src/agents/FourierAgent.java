@@ -57,7 +57,6 @@ public class FourierAgent extends Agent {
         initLearner();
     }
 
-    @Override
     public final void initLearner() {
         //history = new FrameHistory(framesPerState);
         history = new FrameHistory_Transform(framesPerState, new FourierTransform(imageSize, imageSize, order));

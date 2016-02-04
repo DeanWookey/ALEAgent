@@ -6,16 +6,16 @@ import java.util.Arrays;
  *
  * @author itchallengeuser
  */
-public class FullFourierBasis extends TransformBasis {
+public class FullPolynomialBasis extends TransformBasis {
 
     BasisFunction bfs[];
     int dimensions;
 
-    public FullFourierBasis(int numFrames, int frameWidth, int frameHeight, int order) {
+    public FullPolynomialBasis(int numFrames, int frameWidth, int frameHeight, int order) {
         this(numFrames, frameWidth, frameHeight, order, 2);
     }
 
-    public FullFourierBasis(int numFrames, int frameWidth, int frameHeight, int order, int dimensions) {
+    public FullPolynomialBasis(int numFrames, int frameWidth, int frameHeight, int order, int dimensions) {
         super(numFrames, frameWidth, frameHeight);
         this.numFeatures = (int) Math.pow(order + 1, dimensions);
         bfs = new BasisFunction[numFeatures];
@@ -26,7 +26,7 @@ public class FullFourierBasis extends TransformBasis {
             for (int j = 0; j < doubleC.length; j++) {
                 doubleC[j] = c[j];
             }
-            bfs[i] = new FourierBasis(doubleC);
+            bfs[i] = new PolynomialBasis(doubleC);
             iterate(c, c.length-1, order);
         }
     }

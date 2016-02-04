@@ -47,7 +47,9 @@ public class State {
         replaced = true;
     }*/
     
-    public State(double[] vars) {
+    
+    public State(double...vars) {
+    
         this.vars = vars;
         
         this.numDimensions = vars.length;

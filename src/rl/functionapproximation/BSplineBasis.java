@@ -3,7 +3,7 @@ package rl.functionapproximation;
 import java.util.ArrayList;
 import rl.domain.State;
 
-public class BSplineBasis extends Basis {
+public class BSplineBasis extends TransformBasis {
 
     private final int baseScale;
     private final int dimensions;
@@ -21,6 +21,7 @@ public class BSplineBasis extends Basis {
     private static double[][][] waveletCache;
 
     public BSplineBasis(int numFrames, int height, int width, int baseScale, int maxScale, int order, boolean normalise) {
+        super(numFrames, width, height);
         this.order = order;
         this.dimensions = 2;
         this.numFunctionsPerFrame = calculateNumTerms(baseScale, maxScale, dimensions, order);
@@ -35,7 +36,7 @@ public class BSplineBasis extends Basis {
         this.maxScale = maxScale;
         this.baseScale = baseScale;
         initialiseTerms();
-        initialiseCache();
+        //initialiseCache();
     }
 
     public static int calculateNumTerms(int baseScale, int maxScale, int dimensions, int order) {
@@ -147,12 +148,12 @@ public class BSplineBasis extends Basis {
                 //            }
                 //        }
             }
-
+        System.err.println("BSpline populating wavelets: " + terms.length + " expected. " + pos + " populated.");
         }
+        
+
     }
-        
-        
-   
+/*
     private void initialiseCache() {
         if (waveletCache == null) {
             waveletCache = new double[numFeatures][height][width];
@@ -171,16 +172,16 @@ public class BSplineBasis extends Basis {
                 }
             }
         }
-        /*
-         System.out.println(pos);
-         System.out.println(terms.length);
-         for (int i = 0; i < terms.length; i++) {
-         System.out.println(terms[i].getBasisString());
-         }
-         * 
-         */
-    }
+        
+//         System.out.println(pos);
+//         System.out.println(terms.length);
+//         for (int i = 0; i < terms.length; i++) {
+//         System.out.println(terms[i].getBasisString());
+//         }
 
+    }
+    */
+/*
     @Override
     public double getValue(State s) {
         double[] phi = computeFeatures(s);
@@ -250,6 +251,16 @@ public class BSplineBasis extends Basis {
         for (int i = 0; i < numFeatures; i++) {
             weights[i] += deltaW[i];
         }
+    }
+*/
+    @Override
+    public BasisFunction[] getBasisFunctions() {
+        return terms;
+    }
+
+    @Override
+    public int getNumFeatures() {
+        return terms.length;
     }
 
 }

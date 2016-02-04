@@ -48,7 +48,6 @@ public abstract class Agent {
     int numRandomReductionFrames = 2000;
     
     
-    public abstract void initLearner();
     public abstract void rlStep(ScreenMatrix image, RLData rlData);
     
     public Agent(boolean gui, String game, String pipesBasename) {
